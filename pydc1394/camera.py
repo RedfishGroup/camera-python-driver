@@ -206,9 +206,14 @@ class _CamAcquisitonThread(Thread):
 
             #the actual image acquisition:
             frame = POINTER(video_frame_t)()
-            self._cam._dll.dc1394_capture_dequeue(self._cam._cam,
-                CAPTURE_POLICY_WAIT, byref(frame)
-            );
+            for i in range(20):
+                try:
+                    self._cam._dll.dc1394_capture_dequeue(self._cam._cam,
+                        CAPTURE_POLICY_WAIT, byref(frame)
+                    )
+                    break
+                except:
+                    time.sleep(0.1)
 
             #get the buffer from the frame (this is part of the ring buffer):
             Dtype = c_char*frame.contents.image_bytes
@@ -218,7 +223,7 @@ class _CamAcquisitonThread(Thread):
 
             self._condition.acquire()
             #generate an Image class from the buffer:
-            
+
             #img = fromstring(buf, dtype=self._cam.mode.dtype).reshape(
             #    self._cam.mode.shape
             #).view(Image)
@@ -229,9 +234,9 @@ class _CamAcquisitonThread(Thread):
                     img = fromstring(buf, dtype=self._cam.mode.dtype).reshape(
                         self._cam.mode.shape
                     ).view(Image)
-                    break 
+                    break
                 except:
-                    time.sleep(0.1)   
+                    time.sleep(0.1)
 
             img._position, img._packet_size, img._packets_per_frame, \
                 img._timestamp, img._frames_behind, img._id = \
@@ -1114,4 +1119,3 @@ class SynchronizedCams(object):
             else:
                 self._cam1.shot()
             ldiff = diff
-
